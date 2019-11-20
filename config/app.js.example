@@ -1,0 +1,7 @@
+'use strict';
+
+export default {
+
+	http_server_port: 8080,
+
+}

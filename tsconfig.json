@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "module": "esnext",
+    "outDir" : "./dist",
+    "sourceMap": true,
+    "target": "esnext"
+  },
+  "include": [
+    "./src/*.ts",
+    "./src/**/*.ts"
+  ]
+}
