@@ -7,14 +7,3 @@ declare module "*.css" {
 
 	export = styles
 }
-
-declare global {
-	namespace NodeJS {
-		interface Global {
-			myConfig: {
-				a: number;
-				b: number;
-			}
-		}
-	}
-}
