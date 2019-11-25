@@ -12,11 +12,5 @@
 				"name": "typescript-plugin-css-modules"
 			}
 		]
-	},
-	"include": [
-		"./src/*.ts",
-		"./src/**/*.ts",
-		"./src/*.css",
-		"./src/**/*.css"
-	]
+	}
 }

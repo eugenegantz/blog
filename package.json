@@ -7,7 +7,7 @@
   },
   "version": "1.0.0",
   "__type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/server.bundle.js",
   "dependencies": {
     "@types/body-parser": "^1.17.1",
     "@types/express": "^4.17.2",
@@ -38,7 +38,8 @@
     "ts-loader": "^6.2.1",
     "typescript": "^3.7.2",
     "typescript-plugin-css-modules": "^2.1.0",
-    "webpack": "^5.0.0-beta.7"
+    "webpack": "^5.0.0-beta.7",
+    "webpack-node-externals": "^1.7.2"
   },
   "devDependencies": {
     "webpack-cli": "^3.3.10"

@@ -1,7 +1,7 @@
 'use strict';
 
 import React from 'react';
-import styles from './p-page.css';
+import styles from './p-page.m.css';
 
 
 export class PPage extends React.Component {
@@ -10,7 +10,7 @@ export class PPage extends React.Component {
 		return (
 			<div className={styles.body}>
 				{
-					new Date
+					'100200'
 				}
 			</div>
 		);
