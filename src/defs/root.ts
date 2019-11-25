@@ -1,6 +1,5 @@
 'use strict';
 
-const
-	modPath = require('path');
+import modPath from 'path';
 
 global.__root = modPath.resolve(__dirname, '../../');
