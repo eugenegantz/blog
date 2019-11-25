@@ -30,6 +30,21 @@ export interface IAPIModulePostsUpsertArgs {
 
 }
 
+export interface IMetaProcessorFunc {
+
+	(meta: ITableMetaRows, decl: IMetaProcessorDecl): Promise<ITableMetaRows>;
+
+}
+
+interface IMetaProcessorDecl {
+
+	processor: IMetaProcessorFunc;
+
+
+	async: boolean;
+
+}
+
 
 const
 	TABLE_NAME_MAIN = 't_posts',
@@ -44,6 +59,9 @@ const _utils = {
 
 
 export class APIModulePosts extends APIModuleStdCRUD {
+
+	_metaProcessors: IMetaProcessorDecl[] = [];
+
 
 	/**
 	 * Получить шаблон объекта записи
@@ -67,7 +85,32 @@ export class APIModulePosts extends APIModuleStdCRUD {
 	 * @return {Promise}
 	 * */
 	_processingPostMeta(meta: ITableMetaRows): Promise<ITableMetaRows> {
-		return Promise.resolve(meta);
+		let _promiseSync = Promise.resolve([]);
+		let _promiseAsync = [_promiseSync];
+
+		this._metaProcessors.forEach(decl => {
+			let _async      = decl.async;
+			let processor   = decl.processor;
+
+			_async
+				? _promiseAsync.push(processor(meta, decl))
+				: _promiseSync = _promiseSync.then(() => processor(meta, decl));
+		});
+
+		return Promise.all(_promiseAsync).then(() => meta);
+	}
+
+
+	/**
+	 * Установить обработчик мета-записей
+	 *
+	 * @param {Function} arg.processor
+	 * @param {Boolean} arg.async
+	 *
+	 * @return {undefined}
+	 * */
+	registerMetaProcessor(arg: IMetaProcessorDecl): void {
+		this._metaProcessors.push(arg);
 	}
 
 

@@ -1,13 +1,22 @@
 {
-  "compilerOptions": {
-    "esModuleInterop": true,
-    "module": "esnext",
-    "outDir" : "./dist",
-    "sourceMap": true,
-    "target": "esnext"
-  },
-  "include": [
-    "./src/*.ts",
-    "./src/**/*.ts"
-  ]
+	"compilerOptions": {
+		"jsx": "react",
+		"esModuleInterop": true,
+		"module": "esnext",
+		"outDir": "./dist",
+		"sourceMap": true,
+		"target": "esnext",
+		"moduleResolution": "node",
+		"plugins": [
+			{
+				"name": "typescript-plugin-css-modules"
+			}
+		]
+	},
+	"include": [
+		"./src/*.ts",
+		"./src/**/*.ts",
+		"./src/*.css",
+		"./src/**/*.css"
+	]
 }

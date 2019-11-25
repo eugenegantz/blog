@@ -1,20 +1,18 @@
+
 'use strict';
+
+import React from 'react';
+import ReactDOMServer from 'react-dom/server';
+import { PHTMLCommon } from '../ui/components/p-html-common/p-html-common';
+
 
 export default async function(req, res) {
 	try {
-		let html = `
-			<!DOCTYPE html>
-			<html>
-				<head>
-					<meta charset="UTF-8" />
-				</head>
-				<body>
-					<div>
-						${new Date}
-					</div>
-				</body>
-			</html>
-		`;
+		let html = ''
+			+ '<!DOCTYPE html>'
+			+ ReactDOMServer.renderToString(
+				React.createElement(PHTMLCommon, {})
+			);
 
 		res.send(html);
 
