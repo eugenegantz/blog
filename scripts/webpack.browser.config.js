@@ -1,7 +1,7 @@
 const
-	MiniCssExtractPlugin = require('mini-css-extract-plugin');
-
-const
+	nodeExternals = require('webpack-node-externals'),
+	webpack = require('webpack'),
+	MiniCssExtractPlugin = require('mini-css-extract-plugin'),
 	MODULES = {
 		path: require('path'),
 	};
@@ -11,12 +11,14 @@ module.exports = {
 	// mode: "production",
 	mode: 'development',
 
-	entry: MODULES.path.resolve(__dirname, './src/controllers/common.ts'),
+	target: 'web',
+
+	entry: MODULES.path.resolve(__dirname, '../src/ui/index.tsx'),
 
 	output: {
-		filename: '[chunkhash].bundle.js',
+		filename: '[name].[hash].bundle.js',
 		chunkFilename: '[id].js',
-		path: MODULES.path.resolve(__dirname, './static/bundles/'),
+		path: MODULES.path.resolve(__dirname, '../static/bundles/'),
 	},
 
 	// Enable sourcemaps for debugging webpack's output.
@@ -34,7 +36,15 @@ module.exports = {
 				// exclude: /node_modules/,
 				use: [
 					{
-						loader: "ts-loader"
+						loader: MODULES.path.resolve(__dirname, '../loaders/import-meta.js'),
+					},
+					{
+						loader: "ts-loader",
+						options: {
+							compilerOptions: {
+								jsx: 'react',
+							}
+						}
 					}
 				]
 			},
@@ -46,7 +56,7 @@ module.exports = {
 			},
 
 			{
-				test: /\.css$/i,
+				test: /\.m\.css$/i,
 				use: [
 					{
 						loader: MiniCssExtractPlugin.loader,
@@ -54,17 +64,31 @@ module.exports = {
 							hmr: process.env.NODE_ENV === 'development',
 						},
 					},
-					'css-loader',
+					{
+						loader: 'css-loader',
+						options: {
+							importLoaders: 1,
+							modules: {
+								localIdentName: '[name]__[hash:base64:5]',
+							},
+						},
+					},
 				],
 			},
 		]
 	},
 
 	plugins: [
+		/*
+		new webpack.WatchIgnorePlugin([
+			/\.js$/,
+			/\.d\.ts$/
+		]),
+		*/
 		new MiniCssExtractPlugin({
 			// Options similar to the same options in webpackOptions.output
 			// all options are optional
-			filename: '[name].css',
+			filename: '[name].[hash].css',
 			chunkFilename: '[id].css',
 			ignoreOrder: false, // Enable to remove warnings about conflicting order
 		}),
@@ -74,10 +98,7 @@ module.exports = {
 	// assume a corresponding global variable exists and use that instead.
 	// This is important because it allows us to avoid bundling all of our
 	// dependencies, which allows browsers to cache those libraries between builds.
-	/*
-	externals: {
-		"react": "React",
-		"react-dom": "ReactDOM"
-	}
-	*/
+	externals: [
+		// nodeExternals(),
+	]
 };

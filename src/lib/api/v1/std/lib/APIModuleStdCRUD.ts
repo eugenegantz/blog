@@ -5,7 +5,7 @@ import _knex from '../../../../knex/knex';
 import { APIModuleStd } from './APIModuleStd';
 import _dbUtilsQueries from '../../../../utils/db/mysql/queries';
 import { IMySQLTableScheme } from '../../../../interfaces/IMySQLTableScheme';
-
+import { ITableMetaRows } from '../../../../interfaces/tables/ITableMetaRows';
 import {
 	IArgBuildStdMetaTableUpsertQueryByDiff,
 	IResBuildStdMetaTableUpsertQueryByDiff,
@@ -21,8 +21,10 @@ function isEmpty(value: any): boolean {
 	return !![].concat(value).join('');
 }
 
+
 const
 	knex = _knex({ client: 'mysql' });
+
 
 const
 	_utils = {
@@ -32,7 +34,26 @@ const
 	};
 
 
+export interface IMetaProcessorFunc {
+
+	(meta: ITableMetaRows, decl: IMetaProcessorDecl): Promise<ITableMetaRows>;
+
+}
+
+export interface IMetaProcessorDecl {
+
+	processor: IMetaProcessorFunc;
+
+
+	async: boolean;
+
+}
+
+
 export class APIModuleStdCRUD extends APIModuleStd {
+
+	_metaProcessors: IMetaProcessorDecl[] = [];
+
 
 	private readonly _dbQueryOperators: object = {
 		like: {
@@ -537,6 +558,41 @@ export class APIModuleStdCRUD extends APIModuleStd {
 		}
 
 		return res;
+	}
+
+
+	/**
+	 * @param {Array} meta
+	 *
+	 * @return {Promise}
+	 * */
+	processingPostMeta(meta: ITableMetaRows): Promise<ITableMetaRows> {
+		let _promiseSync = Promise.resolve([]);
+		let _promiseAsync = [_promiseSync];
+
+		this._metaProcessors.forEach(decl => {
+			let _async      = decl.async;
+			let processor   = decl.processor;
+
+			_async
+				? _promiseAsync.push(processor(meta, decl))
+				: _promiseSync = _promiseSync.then(() => processor(meta, decl));
+		});
+
+		return Promise.all(_promiseAsync).then(() => meta);
+	}
+
+
+	/**
+	 * Установить обработчик мета-записей
+	 *
+	 * @param {Function} arg.processor
+	 * @param {Boolean} arg.async
+	 *
+	 * @return {undefined}
+	 * */
+	registerMetaProcessor(arg: IMetaProcessorDecl): void {
+		this._metaProcessors.push(arg);
 	}
 
 }

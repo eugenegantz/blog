@@ -10,7 +10,6 @@ import { ITableMetaRows } from '../../../../interfaces/tables/ITableMetaRows';
 import { ITableMetaRow } from '../../../../interfaces/tables/ITableMetaRow';
 import { IArgQueryBuilder } from '../../std/lib/interfaces/common';
 import { ITablePostsRow } from './interfaces/tables/ITablePostsRow';
-import { ITablePostsRows } from './interfaces/tables/ITablePostsRows';
 import {
 	IAPIModulePostsResultStructError,
 	IAPIModulePostsGetResultStructSuccess,
@@ -30,21 +29,6 @@ export interface IAPIModulePostsUpsertArgs {
 
 }
 
-export interface IMetaProcessorFunc {
-
-	(meta: ITableMetaRows, decl: IMetaProcessorDecl): Promise<ITableMetaRows>;
-
-}
-
-interface IMetaProcessorDecl {
-
-	processor: IMetaProcessorFunc;
-
-
-	async: boolean;
-
-}
-
 
 const
 	TABLE_NAME_MAIN = 't_posts',
@@ -59,60 +43,6 @@ const _utils = {
 
 
 export class APIModulePosts extends APIModuleStdCRUD {
-
-	_metaProcessors: IMetaProcessorDecl[] = [];
-
-
-	/**
-	 * Получить шаблон объекта записи
-	 *
-	 * @return {Object} - объект записи
-	 * */
-	_getPostResTpl(): ITablePostsRow {
-		return {
-			id:             void 0, // {Number}
-			uri:            void 0, // {String}
-			title:          void 0, // {String}
-			content:        void 0, // {String}
-			meta:           [],     // {Array}
-		};
-	}
-
-
-	/**
-	 * @param {Array} meta
-	 *
-	 * @return {Promise}
-	 * */
-	_processingPostMeta(meta: ITableMetaRows): Promise<ITableMetaRows> {
-		let _promiseSync = Promise.resolve([]);
-		let _promiseAsync = [_promiseSync];
-
-		this._metaProcessors.forEach(decl => {
-			let _async      = decl.async;
-			let processor   = decl.processor;
-
-			_async
-				? _promiseAsync.push(processor(meta, decl))
-				: _promiseSync = _promiseSync.then(() => processor(meta, decl));
-		});
-
-		return Promise.all(_promiseAsync).then(() => meta);
-	}
-
-
-	/**
-	 * Установить обработчик мета-записей
-	 *
-	 * @param {Function} arg.processor
-	 * @param {Boolean} arg.async
-	 *
-	 * @return {undefined}
-	 * */
-	registerMetaProcessor(arg: IMetaProcessorDecl): void {
-		this._metaProcessors.push(arg);
-	}
-
 
 	/**
 	 * Получить метаданные записи. API Версия
@@ -130,9 +60,25 @@ export class APIModulePosts extends APIModuleStdCRUD {
 		let query                   = this.buildStdMetaTableSelectQuery(null, arg, opt).toString();
 		let rows                    = await db.query<ITableMetaRow>(query);
 
-		rows                        = await this._processingPostMeta(rows);
+		rows                        = await this.processingPostMeta(rows);
 
 		return { data: rows };
+	}
+
+
+	/**
+	 * Получить шаблон объекта записи
+	 *
+	 * @return {Object} - объект записи
+	 * */
+	_getPostResTpl(): ITablePostsRow {
+		return {
+			id:             void 0, // {Number}
+			uri:            void 0, // {String}
+			title:          void 0, // {String}
+			content:        void 0, // {String}
+			meta:           [],     // {Array}
+		};
 	}
 
 
@@ -161,7 +107,7 @@ export class APIModulePosts extends APIModuleStdCRUD {
 
 		let tScmMain;
 		let tScmMeta;
-		let resPosts;
+		let resMain;
 		let resMeta;
 		let resAmount;
 		let data            = [];
@@ -204,10 +150,10 @@ export class APIModulePosts extends APIModuleStdCRUD {
 			// Запрос. Таблица с общее количество записей
 			query += ';' + this.buildStdMainTableCountSelectQuery(null, args, opt).toString();
 
-			[resPosts, resMeta, resAmount] = await db.query(query);
+			[resMain, resMeta, resAmount] = await db.query(query);
 		}
 
-		data = resPosts.map(row => {
+		data = resMain.map(row => {
 			row = Object.assign(this._getPostResTpl(), row);
 
 			return postsById[row.id] = row;

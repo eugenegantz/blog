@@ -7,7 +7,7 @@ interface EventsNameMapping {
 type EventsHandlerMapping = Map<Function, Function>;
 
 
-class StdEventTarget {
+export class StdEventTarget {
 
 	private _events: EventsNameMapping = {};
 
@@ -40,6 +40,3 @@ class StdEventTarget {
 	}
 
 }
-
-
-export { StdEventTarget };

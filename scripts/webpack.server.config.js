@@ -13,13 +13,13 @@ module.exports = {
 	target: 'node',
 
 	entry: {
-		server: MODULES.path.resolve(__dirname, './src/server.ts'),
+		server: MODULES.path.resolve(__dirname, '../src/server.ts'),
 	},
 
 	output: {
 		filename: '[name].bundle.js',
 		chunkFilename: '[id].js',
-		path: MODULES.path.resolve(__dirname, './dist/'),
+		path: MODULES.path.resolve(__dirname, '../dist/'),
 	},
 
 	// Enable sourcemaps for debugging webpack's output.
@@ -36,7 +36,7 @@ module.exports = {
 				test: /\.ts(x?)$/,
 				// exclude: /node_modules/,
 				use: [
-					MODULES.path.resolve(__dirname, './loaders/import-meta.js'),
+					MODULES.path.resolve(__dirname, '../loaders/import-meta.js'),
 					"ts-loader",
 				]
 			},

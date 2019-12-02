@@ -1,9 +1,6 @@
 'use strict';
 
-import { StdEventTarget } from "../std-event-target/std-event-target.class";
-
-
-class StdObject extends StdEventTarget {
+export class StdObject {
 
 	private _fields: object = {};
 
@@ -22,8 +19,6 @@ class StdObject extends StdEventTarget {
 		key = this._key(key);
 
 		this._fields[key] = value;
-
-		this.emit('set:' + key, { value, key });
 
 		return this;
 	}
