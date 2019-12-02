@@ -22,7 +22,10 @@ export default {
 	/**
 	 * Проверить наличие прав у пользователя
 	 * */
-	async validate(user: ITableUsersRow, permission: string): Promise<boolean> {
+	async validate(user: ITableUsersRow | undefined, permission: string): Promise<boolean> {
+		if (!user)
+			return false;
+
 		if (!this._cache.length)
 			this._cache = await db.query(`SELECT * FROM t_user_permissions`);
 

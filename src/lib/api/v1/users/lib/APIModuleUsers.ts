@@ -22,7 +22,11 @@ const
 	knex = _knex({ client: 'mysql' });
 
 
-export interface IAPIModulePostsGetArgs extends IArgQueryBuilder {}
+export interface IAPIModuleUsersGetArgs extends IArgQueryBuilder {
+
+	cache?: boolean;
+
+}
 
 
 const
@@ -47,11 +51,21 @@ export class APIModuleUsers extends APIModuleStdCRUD {
 			name    : '',
 			date    : '',
 			meta    : [],
+			email   : '',
+			tel     : '',
+			hash    : '',
 		};
 	}
 
 
-	async get(args: IAPIModulePostsGetArgs) {
+	async get(args: IAPIModuleUsersGetArgs) {
+		let cacheKey = this.createCacheKeyFromArg(args);
+		let useCache = args.cache;
+
+		// Если доступно, вернуть ответ из кэша
+		if (useCache && this.lruCache.has(cacheKey))
+			return this.lruCache.get(cacheKey);
+
 		args = _.defaultsDeep(_.cloneDeep(args), {
 			params: {},
 		});
@@ -122,10 +136,16 @@ export class APIModuleUsers extends APIModuleStdCRUD {
 			entry.meta.push(mRow);
 		});
 
-		return {
+		let res = {
 			data,
 			count,
 		};
+
+		// если требуется, записать ответ в кэш
+		if (useCache)
+			this.lruCache.set(cacheKey, res);
+
+		return res;
 	}
 
 }

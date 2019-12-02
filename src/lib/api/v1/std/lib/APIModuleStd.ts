@@ -12,7 +12,7 @@ import { ICtorArgs } from './interfaces/common';
 
 export class APIModuleStd extends EventEmitter {
 
-	private lruCache: any;
+	protected lruCache: any;
 
 
 	constructor(arg: ICtorArgs = {}) {

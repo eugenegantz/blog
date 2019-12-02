@@ -3,15 +3,25 @@
 import { Request, Response } from 'express';
 import { APIModulePosts, IAPIModulePostsUpsertArgs } from './lib/APIModulePosts';
 import utilsReq from '../../../utils/req';
-
-const
-	posts = new APIModulePosts();
+import userPermissions from '../user-permissions/user-permissions';
+import apiPosts from './lib/posts';
+import apiUsers from '../users/lib/users';
+import { ITableUsersRow } from '../users/lib/interfaces/tables/ITableUsersRow';
 
 
 export default {
 
-	_isAuthUsrHasAdminRights(req: Request, res: Response): Promise<boolean> {
-		return Promise.resolve(true);
+	async _getUser(req: Request, res: Response): Promise<ITableUsersRow> {
+		let userId = req.session.userId;
+
+		let user = await apiUsers.get({
+			filter: {
+				id: userId,
+			},
+			cache: true,
+		});
+
+		return user.data[0];
 	},
 
 
@@ -45,7 +55,7 @@ export default {
 	 * }
 	 * */
 	get(req: Request, res: Response) {
-		return posts.get(utilsReq.getArgs(req));
+		return apiPosts.get(utilsReq.getArgs(req));
 	},
 
 
@@ -63,7 +73,7 @@ export default {
 	getMeta(req: Request, res: Response) {
 		let args = utilsReq.getArgs(req);
 
-		return posts.getMeta({
+		return apiPosts.getMeta({
 			filter: {
 				id: args.id,
 				uri: args.uri,
@@ -97,9 +107,13 @@ export default {
 	 * }
 	 * */
 	async upsert(req: Request, res: Response) {
-		await this._isAuthUsrHasAdminRights(req, res);
+		let userRow = await this._getUser(req, res);
+		let hasRight = await userPermissions.validate(userRow, 'edit_posts');
 
-		return posts.upsert(<IAPIModulePostsUpsertArgs>utilsReq.getArgs(req));
+		if (!hasRight)
+			return Promise.reject('!rights');
+
+		return apiPosts.upsert(<IAPIModulePostsUpsertArgs>utilsReq.getArgs(req));
 	},
 
 
@@ -112,9 +126,13 @@ export default {
 	 * }
 	 * */
 	async remove(req: Request, res: Response) {
-		await this._isAuthUsrHasAdminRights(req, res);
+		let userRow = await this._getUser(req, res);
+		let hasRight = await userPermissions.validate(userRow, 'edit_posts');
 
-		return posts.remove(utilsReq.getArgs(req));
+		if (!hasRight)
+			return Promise.reject('!rights');
+
+		return apiPosts.remove(utilsReq.getArgs(req));
 	}
 
 };
