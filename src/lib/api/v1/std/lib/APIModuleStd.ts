@@ -25,7 +25,7 @@ export class APIModuleStd extends EventEmitter {
 	}
 
 
-	createCacheKeyFromArg(arg: string | { cache?: true }): string {
+	createCacheKeyFromArg(arg: string | { cache?: boolean }): string {
 		if (typeof arg == 'string')
 			return arg;
 

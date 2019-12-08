@@ -5,12 +5,17 @@ import db from './lib/mysql/mysql-pool';
 import minimist from 'minimist';
 import appConfig from '../config/app.js';
 import modPath from 'path';
+import bodyParser from 'body-parser';
 import express from 'express';
 import expressSession from 'express-session';
-import expressMySQLSession from 'express-mysql-session';
+import _expressMySQLSession from 'express-mysql-session';
 import controllerCommon from './controllers/common';
 import controllerAPI from './controllers/api';
 import initDB from './init/db';
+
+const
+	// костыль - @types для библитеки написан с ошибками
+	expressMySQLSession: any = _expressMySQLSession;
 
 
 (async () => {
@@ -33,6 +38,8 @@ import initDB from './init/db';
 				},
 			},
 		}, db.pool);
+
+	app.use(bodyParser.json());
 
 	app.all('/api/v1', controllerAPI);
 	app.all('/', controllerCommon);

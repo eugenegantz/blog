@@ -4,18 +4,12 @@ import _ from 'lodash';
 import _knex from '../../../../knex/knex';
 import _utilsDBScheme from '../../../../utils/db/mysql/scheme';
 import _utilsDBQueries from '../../../../utils/db/mysql/queries';
-import db from '../../../../mysql/mysql-pool';
 import { APIModuleStdCRUD } from '../../std/lib/APIModuleStdCRUD';
 import { ITableMetaRows } from '../../../../interfaces/tables/ITableMetaRows';
 import { ITableMetaRow } from '../../../../interfaces/tables/ITableMetaRow';
 import { IArgQueryBuilder } from '../../std/lib/interfaces/common';
 import { ITablePostsRow } from './interfaces/tables/ITablePostsRow';
-import {
-	IAPIModulePostsResultStructError,
-	IAPIModulePostsGetResultStructSuccess,
-	IAPIModulePostsUpsertResultStructSuccess
-} from './interfaces/common';
-
+import { APIModulePosts as IAPIModulePosts } from './interfaces/common';
 
 const
 	knex = _knex({ client: 'mysql' });
@@ -50,6 +44,8 @@ export class APIModulePosts extends APIModuleStdCRUD {
 	 * @return {Promise}
 	 * */
 	async getMeta(arg: IArgQueryBuilder = {}): Promise<{ data: ITableMetaRows }> {
+		let db = this.getDatabaseInstance();
+
 		let opt = {
 			tables: {
 				main: TABLE_NAME_MAIN,
@@ -60,7 +56,7 @@ export class APIModulePosts extends APIModuleStdCRUD {
 		let query                   = this.buildStdMetaTableSelectQuery(null, arg, opt).toString();
 		let rows                    = await db.query<ITableMetaRow>(query);
 
-		rows                        = await this.processingPostMeta(rows);
+		rows                        = await this.processingMetaEntries(rows);
 
 		return { data: rows };
 	}
@@ -97,7 +93,7 @@ export class APIModulePosts extends APIModuleStdCRUD {
 	 * @return {Promise}
 	 * */
 
-	async get(args: IAPIModulePostsGetArgs): Promise<IAPIModulePostsGetResultStructSuccess | IAPIModulePostsResultStructError> {
+	async get(args: IAPIModulePostsGetArgs): Promise<IAPIModulePosts.Get.StructResponseResult> {
 		args = _.defaultsDeep(_.cloneDeep(args), {
 			filter: {
 				type: ['post'],
@@ -110,6 +106,7 @@ export class APIModulePosts extends APIModuleStdCRUD {
 		let resMain;
 		let resMeta;
 		let resAmount;
+		let db              = this.getDatabaseInstance();
 		let data            = [];
 		let count           = 0;
 		let postsById       = {};
@@ -162,7 +159,7 @@ export class APIModulePosts extends APIModuleStdCRUD {
 		count = resAmount[0]._amount;
 
 		// Обработка меты
-		await this._processingPostMeta(resMeta);
+		await this.processingMetaEntries(resMeta);
 
 		// Привязка меты к постам
 		resMeta.forEach(mRow => {
@@ -191,11 +188,12 @@ export class APIModulePosts extends APIModuleStdCRUD {
 	 *
 	 * @return {Promise}
 	 * */
-	async upsert(arg: IAPIModulePostsUpsertArgs): Promise<IAPIModulePostsUpsertResultStructSuccess | IAPIModulePostsResultStructError> {
+	async upsert(arg: IAPIModulePostsUpsertArgs): Promise<IAPIModulePosts.Upsert.StructResponseResult> {
 
 		let prevPost;
 		let tScmMain;
 		let tScmMeta;
+		let db              = this.getDatabaseInstance();
 		let uid             = Math.round(Math.random() * Math.pow(10, 16));
 		let post            = arg.data;
 		let isNew           = !post.id;
@@ -311,7 +309,8 @@ export class APIModulePosts extends APIModuleStdCRUD {
 	/**
 	 * Удалить записи
 	 * */
-	async remove(arg: IAPIModulePostsGetArgs): Promise<{} | IAPIModulePostsResultStructError> {
+	async remove(arg: IAPIModulePostsGetArgs): Promise<IAPIModulePosts.Remove.StructResponseResult> {
+		let db = this.getDatabaseInstance();
 		let id = [].concat(_.get(arg, 'filter.id') || []);
 
 		if (!id.length)

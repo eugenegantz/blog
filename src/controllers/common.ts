@@ -77,7 +77,11 @@ export default async function(req, res) {
 		res.send(html);
 
 	} catch (err) {
-		err += '';
+		console.error(err);
+
+		err = err.stack || err.message || (err + '');
+
+		res.set('Content-type', 'text/plain');
 
 		res.send({ err });
 	}

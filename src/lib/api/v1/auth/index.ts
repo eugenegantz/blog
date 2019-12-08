@@ -1,7 +1,7 @@
 'use strict';
 
 import appConfig from '../../../../../config/app.js';
-import { Request, Response } from 'express';
+import { Request as _Request, Response } from 'express';
 import errorsRegistry from './errors';
 import _utilsReq from '../../../utils/req';
 import _utilsDbString from '../../../utils/db/string';
@@ -9,9 +9,17 @@ import db from '../../../mysql/mysql-pool';
 import _knex from '../../../knex/knex';
 import modCrypto from 'crypto';
 import { ITableUsersRow } from '../users/lib/interfaces/tables/ITableUsersRow';
+import { APIAuth } from './interfaces/common';
+
 
 interface ITableUsersRowResult extends ITableUsersRow {
 	date_x: number;
+}
+
+interface Request extends _Request {
+
+	sessionStore: any;
+
 }
 
 const
@@ -35,7 +43,7 @@ export default {
 	/**
 	 * Авторизация
 	 * */
-	async login(req: Request, res: Response) {
+	async login(req: Request, res: Response): Promise<APIAuth.StructResponseResult> {
 		let args = utils.req.getArgs(req);
 
 		if (args.login || args.password)
@@ -48,7 +56,7 @@ export default {
 	/**
 	 * Авторизация по паролю и логину (тел., e-mail)
 	 * */
-	async _loginByLoginPwd(req: Request, res: Response): Promise<void> {
+	async _loginByLoginPwd(req: Request, res: Response): Promise<APIAuth.StructResponseResult> {
 		let sessEmail;
 		let expiresTs: Date;
 		let args                = utils.req.getArgs(req);
@@ -76,7 +84,7 @@ export default {
 		if (!dbUserRow)
 			return Promise.reject(errorsRegistry.createError({ code: '38844566467951513' }));
 
-		let expectedPasswordHash                = _getPasswordHash(argPassword, dbUserRow.date_x, appConfig.password_pepper);
+		let expectedPasswordHash                = _getPasswordHash(argPassword, dbUserRow.date_x.toString(), appConfig.password_pepper);
 		let dbPasswordHash                      = dbUserRow.hash;
 
 		// Пароль не совпадает
@@ -110,7 +118,7 @@ export default {
 	/**
 	 * Авторизация по коду сессии
 	 * */
-	async _loginBySid(req, res): Promise<void> {
+	async _loginBySid(req: Request, res: Response): Promise<APIAuth.StructResponseResult> {
 		let args = utils.req.getArgs(req);
 
 		if (!req.session || !req.session.userId) {
@@ -124,7 +132,7 @@ export default {
 	/**
 	 * Отозвать авторизацию
 	 * */
-	async logout(req: Request, res: Response): Promise<void> {
+	async logout(req: Request, res: Response): Promise<APIAuth.StructResponseResult> {
 		if (req.session) {
 			delete req.session.userId;
 

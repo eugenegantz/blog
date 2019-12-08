@@ -4,24 +4,40 @@ import { ITableMetaRows } from '../../../../../interfaces/tables/ITableMetaRows'
 import { ITableUsersRows } from './tables/ITableUsersRows';
 import { ITableUsersRow } from './tables/ITableUsersRow';
 
+export namespace APIModuleUsers {
 
-export interface IAPIModuleUsersGetResultStructSuccess {
+	export namespace Get {
 
-	data: ITableUsersRows
+		export interface StructResponseSuccess {
 
-	count: number,
+			data: ITableUsersRows
 
-}
+			count: number,
 
+		}
 
-export interface IAPIModuleUsersUpsertResultStructSuccess {
+		export type StructResponseError = Error;
 
-	data: {
-		id: number,
+		export type StructResponseResult = StructResponseSuccess;
+
+	}
+
+	export namespace Upsert {
+
+		export interface StructResponseSuccess {
+
+			data: {
+				id: number,
+			}
+
+		}
+
+		export type StructResponseError = Error;
+
+		export type StructResponseResult = StructResponseSuccess;
+
 	}
 
 }
 
 
-export type IAPIModuleUsersResultStructError       = Error;
-export type IAPIModuleUsersResultStruct            = IAPIModuleUsersGetResultStructSuccess | IAPIModuleUsersResultStructError;

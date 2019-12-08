@@ -1,5 +1,11 @@
 'use strict';
 
+import db from '../../../../mysql/mysql-pool';
 import { APIModuleUsers } from './APIModuleUsers';
 
-export default new APIModuleUsers();
+const
+	apiUsers = new APIModuleUsers();
+
+apiUsers.setDatabaseInstance(db);
+
+export default apiUsers;

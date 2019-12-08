@@ -6,6 +6,7 @@ import { APIModuleStd } from './APIModuleStd';
 import _dbUtilsQueries from '../../../../utils/db/mysql/queries';
 import { IMySQLTableScheme } from '../../../../interfaces/IMySQLTableScheme';
 import { ITableMetaRows } from '../../../../interfaces/tables/ITableMetaRows';
+import { IPool } from '../../../../mysql/mysql-pool';
 import {
 	IArgBuildStdMetaTableUpsertQueryByDiff,
 	IResBuildStdMetaTableUpsertQueryByDiff,
@@ -53,6 +54,9 @@ export interface IMetaProcessorDecl {
 export class APIModuleStdCRUD extends APIModuleStd {
 
 	_metaProcessors: IMetaProcessorDecl[] = [];
+
+
+	private _db: IPool;
 
 
 	private readonly _dbQueryOperators: object = {
@@ -107,6 +111,16 @@ export class APIModuleStdCRUD extends APIModuleStd {
 			}
 		}
 	};
+
+
+	setDatabaseInstance(db: IPool) {
+		this._db = db;
+	}
+
+
+	getDatabaseInstance() {
+		return this._db;
+	}
 
 
 	/**
@@ -566,7 +580,7 @@ export class APIModuleStdCRUD extends APIModuleStd {
 	 *
 	 * @return {Promise}
 	 * */
-	processingPostMeta(meta: ITableMetaRows): Promise<ITableMetaRows> {
+	processingMetaEntries(meta: ITableMetaRows): Promise<ITableMetaRows> {
 		let _promiseSync = Promise.resolve([]);
 		let _promiseAsync = [_promiseSync];
 

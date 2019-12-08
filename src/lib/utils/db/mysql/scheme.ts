@@ -6,6 +6,14 @@ import { IPool } from '../../../mysql/mysql-pool';
 
 type TGetTableSchemeArg = IPool & { _ispTableScmCache?: object };
 
+interface IShowColumnsRow {
+	field       : number;
+	type        : string;
+	'null'      : string;
+	key         : string;
+	'default'   : any;
+	extra       : string | null;
+}
 
 export default {
 
@@ -38,7 +46,7 @@ export default {
 		if (scm = connection._ispTableScmCache[tableName])
 			return scm;
 
-		let res = await connection.query(`SHOW COLUMNS FROM \`${tableName}\``);
+		let res = await connection.query<IShowColumnsRow>(`SHOW COLUMNS FROM \`${tableName}\``);
 
 		scm = cache[tableName] = {
 			'null'      : '',
@@ -50,7 +58,7 @@ export default {
 		};
 
 		res.forEach(row => {
-			row = Object.keys(row).reduce((obj, key) => {
+			row = <IShowColumnsRow>Object.keys(row).reduce((obj, key) => {
 				obj[key.toLowerCase()] = row[key];
 
 				return obj;

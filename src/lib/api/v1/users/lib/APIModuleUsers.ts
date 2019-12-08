@@ -4,19 +4,13 @@ import _ from 'lodash';
 import _knex from '../../../../knex/knex';
 import _utilsDBScheme from '../../../../utils/db/mysql/scheme';
 import _utilsDBQueries from '../../../../utils/db/mysql/queries';
-import db from '../../../../mysql/mysql-pool';
 import { APIModuleStdCRUD } from '../../std/lib/APIModuleStdCRUD';
 import { ITableMetaRows } from '../../../../interfaces/tables/ITableMetaRows';
 import { ITableMetaRow } from '../../../../interfaces/tables/ITableMetaRow';
 import { IArgQueryBuilder } from '../../std/lib/interfaces/common';
 import { ITableUsersRow } from './interfaces/tables/ITableUsersRow';
 import { ITableUsersRows } from './interfaces/tables/ITableUsersRows';
-import {
-	IAPIModuleUsersResultStructError,
-	IAPIModuleUsersGetResultStructSuccess,
-	IAPIModuleUsersUpsertResultStructSuccess
-} from './interfaces/common';
-
+import { APIModuleUsers as IAPIModuleUsers } from './interfaces/common';
 
 const
 	knex = _knex({ client: 'mysql' });
@@ -58,7 +52,7 @@ export class APIModuleUsers extends APIModuleStdCRUD {
 	}
 
 
-	async get(args: IAPIModuleUsersGetArgs) {
+	async get(args: IAPIModuleUsersGetArgs): Promise<IAPIModuleUsers.Get.StructResponseResult> {
 		let cacheKey = this.createCacheKeyFromArg(args);
 		let useCache = args.cache;
 
@@ -75,6 +69,7 @@ export class APIModuleUsers extends APIModuleStdCRUD {
 		let resMain;
 		let resMeta;
 		let resAmount;
+		let db                  = this.getDatabaseInstance();
 		let data                = [];
 		let count               = 0;
 		let mainEntriesById     = {};
@@ -122,7 +117,7 @@ export class APIModuleUsers extends APIModuleStdCRUD {
 		count = resAmount[0]._amount;
 
 		// Обработка меты
-		await this.processingPostMeta(resMeta);
+		await this.processingMetaEntries(resMeta);
 
 		// Привязка меты к постам
 		resMeta.forEach(mRow => {

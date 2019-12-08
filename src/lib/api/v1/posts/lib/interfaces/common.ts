@@ -5,23 +5,50 @@ import { ITablePostsRows } from './tables/ITablePostsRows';
 import { ITablePostsRow } from './tables/ITablePostsRow';
 
 
-export interface IAPIModulePostsGetResultStructSuccess {
+export namespace APIModulePosts {
 
-	data: ITablePostsRows
+	export namespace Get {
 
-	count: number,
+		export interface StructResponseSuccess {
 
-}
+			data: ITablePostsRows;
+
+			count: number;
+
+		}
+
+		export type StructResponseError = Error;
+
+		export type StructResponseResult = StructResponseSuccess | StructResponseError;
+
+	}
 
 
-export interface IAPIModulePostsUpsertResultStructSuccess {
+	export namespace Upsert {
 
-	data: {
-		id: number,
+		export interface StructResponseSuccess {
+
+			data: {
+				id: number,
+			}
+
+		}
+
+		export type StructResponseError = Error;
+
+		export type StructResponseResult = StructResponseSuccess | StructResponseError;
+
+	}
+
+
+	export namespace Remove {
+
+		export interface StructResponseSuccess {}
+
+		export type StructResponseError = Error;
+
+		export type StructResponseResult = StructResponseSuccess | StructResponseError;
+
 	}
 
 }
-
-
-export type IAPIModulePostsResultStructError       = Error;
-export type IAPIModulePostsResultStruct            = IAPIModulePostsGetResultStructSuccess | IAPIModulePostsResultStructError;

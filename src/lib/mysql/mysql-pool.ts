@@ -16,7 +16,7 @@ export interface IPool {
 
 	pool: Pool,
 
-	query: Function
+	query: <TRow>(string) => Promise<(TRow & object)[]>;
 
 }
 
