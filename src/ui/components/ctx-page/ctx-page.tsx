@@ -1,11 +1,7 @@
 'use strict';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useReducer } from 'react';
 import axios from 'axios';
-
-const
-	context = React.createContext(context);
-
 
 const
 	initialState = {
@@ -14,55 +10,65 @@ const
 	};
 
 const
-	actions = {
-
-		async setPage(arg) {
-			let res = await context.fetchPage(arg);
-
-			context.page = res.data[0];
+	_reduce = {
+		setPending(state, { pending }) {
+			return { pending };
 		},
-
-
-		async fetchPage(arg) {
-			let res = await axios({
-				url: '/api/v1/',
-				method: 'get',
-				headers: {
-					'Content-type': 'application/json',
-				},
-				data: {
-					method: 'posts.get',
-					argument: arg,
-				},
-			})
+		setPage(state, { page }) {
+			return { page };
 		},
-
 	};
 
-
 function reducer(state, action) {
-	switch (action.type) {
-		case 'increment':
-			return {count: state.count + 1};
-		case 'decrement':
-			return {count: state.count - 1};
-		default:
-			throw new Error();
-	}
+	if (!_reduce[action.type])
+		throw new Error(`unknown action "${action.type}"`);
+
+	return _reduce[action.type](state, action);
 }
 
-export function CTXPage() {
-	let [page, setPage]         = useState(null);
-	let [pending, setPending]   = useState(null);
+
+export const Context = React.createContext(null);
+
+
+export function CTXPage(props) {
+	const [state, dispatch] = useReducer(reducer, initialState);
+
+	async function useSetPage(arg) {
+		dispatch({ type: 'setPending', pending: true });
+
+		let res     = await useFetchPage(arg);
+		let page    = res.data.data[0];
+
+		dispatch({ type: 'setPage', page });
+		dispatch({ type: 'setPending', pending: false });
+	}
+
+	async function useFetchPage(arg) {
+		return await axios({
+			url: '/api/v1/',
+			method: 'get',
+			headers: {
+				'Content-type': 'application/json',
+			},
+			data: JSON.stringify({
+				method: 'posts.get',
+				argument: arg,
+			}),
+		});
+	}
+
+	let value = {
+		state,
+		dispatch,
+		useSetPage,
+		useFetchPage,
+	};
 
 	return (
-		<CTXPage.Provider value={context}>
+		<Context.Provider value={value} >
 			{
 				props.children
 			}
-		</CTXPage.Provider>
+		</Context.Provider>
 	);
 }
-
-
-export { CTXPage, reducer, actions };
