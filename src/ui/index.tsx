@@ -2,8 +2,8 @@
 
 import React from 'react';
 import reactDOM from 'react-dom';
-import { PPage } from './components/p-page/p-page';
+import { CTXRouter } from './components/ctx-router/ctx-router';
 
 document.addEventListener('DOMContentLoaded', () => {
-	reactDOM.render(<PPage />, document.querySelector('#app'));
+	reactDOM.render(<CTXRouter />, document.querySelector('#app'));
 }, false);

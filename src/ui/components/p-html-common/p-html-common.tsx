@@ -35,7 +35,7 @@ export function PHTMLCommon (props: IProps) {
 			}
 		</head>
 		<body>
-		<div id="app" data-reactroot />
+			<div id="app" data-reactroot />
 		</body>
 		</html>
 	);

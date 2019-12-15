@@ -41,9 +41,6 @@ const
 
 	app.use(bodyParser.json());
 
-	app.all('/api/v1', controllerAPI);
-	app.all('/', controllerCommon);
-
 	app.use(
 		'/static/',
 		express.static(
@@ -53,6 +50,9 @@ const
 			}
 		)
 	);
+
+	app.all('/api/v1', controllerAPI);
+	app.all('/*', controllerCommon);
 
 	app.listen(httpServerPort, function() {
 		console.log(`[OK] http-server. port: ${httpServerPort}`);

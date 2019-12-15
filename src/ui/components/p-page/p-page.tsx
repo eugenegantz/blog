@@ -1,8 +1,8 @@
 'use strict';
 
 import React, { useContext, useEffect } from 'react';
+import { Context as PageRouterContext } from '../ctx-router/ctx-router';
 import styles from './p-page.m.css';
-import { CTXPage, Context as PageContext } from '../ctx-page/ctx-page';
 import _get from 'lodash/get';
 
 const
@@ -10,35 +10,19 @@ const
 		get: _get,
 	};
 
-export function PPage (props) {
-	return (
-		<CTXPage>
-			<div className={styles.body}>
-				<PPageContent />
-			</div>
-		</CTXPage>
-	);
-}
-
-function PPageContent() {
-	let { state, useSetPage } = useContext(PageContext);
+export function PPage(props) {
+	let { state } = useContext(PageRouterContext);
 	let { page, pending } = state;
-	let skip = false;
 
-	{
-		useEffect(() => {
-			useSetPage({
-				filter: {
-					id: 1,
-				},
-			});
+	let content = (pending || !page || !page.content)
+		? <div>pending</div>
+		: <div>{page.content}</div>;
 
-			skip = true;
-		}, []);
-	}
-
-	if (pending || skip)
-		return <div>pending</div>;
-
-	return <div>{page.content}</div>;
+	return (
+		<div className={styles.body}>
+			{
+				content
+			}
+		</div>
+	)
 }

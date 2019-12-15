@@ -1,10 +1,15 @@
 const
 	nodeExternals = require('webpack-node-externals'),
 	webpack = require('webpack'),
+	OnBuildPlugin = require('./webpack-plugin-on-build'),
 	MiniCssExtractPlugin = require('mini-css-extract-plugin'),
 	MODULES = {
+		fs: require('fs'),
 		path: require('path'),
 	};
+
+const
+	DIR_BUILD = MODULES.path.resolve(__dirname, '../static/bundles/');
 
 
 module.exports = {
@@ -18,7 +23,7 @@ module.exports = {
 	output: {
 		filename: '[name].[hash].bundle.js',
 		chunkFilename: '[id].js',
-		path: MODULES.path.resolve(__dirname, '../static/bundles/'),
+		path: DIR_BUILD,
 	},
 
 	// Enable sourcemaps for debugging webpack's output.
@@ -85,6 +90,25 @@ module.exports = {
 			/\.d\.ts$/
 		]),
 		*/
+		new OnBuildPlugin(
+			function(stats) {
+				const newlyCreatedAssets = stats.compilation.assets;
+				const protectedAssets = { '.gitignore': 1 };
+				const unlinked = [];
+
+				MODULES.fs.readdir(DIR_BUILD, (err, files) => {
+					files.forEach(file => {
+						if (!newlyCreatedAssets[file] && !protectedAssets[file]) {
+							MODULES.fs.unlink(MODULES.path.resolve(DIR_BUILD, file), () => {});
+							unlinked.push(file);
+						}
+					});
+
+					if (unlinked.length > 0)
+						console.log('Removed old assets: ', unlinked);
+				})
+			}
+		),
 		new MiniCssExtractPlugin({
 			// Options similar to the same options in webpackOptions.output
 			// all options are optional
