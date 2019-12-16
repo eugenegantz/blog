@@ -9,6 +9,16 @@ import produce from 'immer';
 import { PPage } from '../p-page/p-page';
 import * as _reactRouterDOM from 'react-router-dom';
 import * as _reactRouterServer from 'react-router';
+import {
+	Provider,
+	createStoreHook,
+	createDispatchHook,
+	createSelectorHook,
+	useStore,
+	useSelector,
+	useDispatch,
+} from 'react-redux';
+import { createStore } from 'redux';
 
 const
 	noop = () => {};
@@ -49,7 +59,9 @@ if (_isBrowserEnv) {
 	Router = StaticRouter;
 }
 
+
 // ----------------------
+
 
 const
 	initialState = {
@@ -71,19 +83,49 @@ const
 		},
 	};
 
-function reducer(state, action) {
+function reducer(state = initialState, action) {
 	if (!_reduce[action.type])
-		throw new Error(`unknown action "${action.type}"`);
+		return;
+		// throw new Error(`unknown action "${action.type}"`);
 
 	return _reduce[action.type](state, action);
 }
 
+
 // ----------------------
 
+
 export const Context = React.createContext(null);
+// export const ReduxContext = React.createContext(null);
+
+
+// ----------------------
+
+
+// export const useStore = createStoreHook(ReduxContext);
+// export const useDispatch = createDispatchHook(ReduxContext);
+// export const useSelector = createSelectorHook(ReduxContext);
+
+const store = createStore(reducer);
+
+
+// ----------------------
+
 
 export function CTXRouter(props) {
-	const [state, dispatch] = useReducer(reducer, props.initialState || initialState);
+	return (
+		<Provider store={store} >
+			<CTXRouterContainer {...props} />
+		</Provider>
+	);
+}
+
+
+export function CTXRouterContainer(props) {
+	let dispatch    = useDispatch();
+	let state       = useStore().getState();
+
+	// const [state, dispatch] = useReducer(reducer, props.initialState || initialState);
 
 	async function useSetPage(arg) {
 		dispatch({ type: 'setPending', pending: true });
