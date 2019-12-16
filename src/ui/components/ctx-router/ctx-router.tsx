@@ -1,42 +1,53 @@
 'use strict';
 
 import React, { useReducer, useContext, useEffect } from 'react';
-import _utilsCommon from '../../../lib/utils/common';
+import { isBrowserEnv } from '../../../lib/utils/common';
 import axios from 'axios';
 import produce from 'immer';
 // import * as _reactRouter from "react-router";
 // import * as _reactRouterDOM from 'react-router-dom';
 import { PPage } from '../p-page/p-page';
-import {
-	BrowserRouter as Router,
-	useHistory,
-	useLocation,
-	useParams,
-	useRouteMatch,
-	Switch,
-	Route,
-	Link,
-} from 'react-router-dom'
-let isBrowserEnv = _utilsCommon.isBrowserEnv();
-let reactRouter;
-// let Router, useHistory, useLocation, useParams, useRouteMatch, Switch, Route, Link;
-/*
-	({
-		BrowserRouter,
-		useHistory,
-		useLocation,
-		useParams,
-		useRouteMatch,
-		Switch,
-		Route,
-		Link,
-	}) = _reactRouterDOM;
-* */
+import * as _reactRouterDOM from 'react-router-dom';
+import * as _reactRouterServer from 'react-router';
 
-/*
-reactRouter = isBrowserEnv
-	? _reactRouterDOM
-	: _reactRouter;*/
+const
+	noop = () => {};
+
+let StaticRouter, BrowserRouter, useHistory, useLocation, useParams, useRouteMatch, Switch, Route, Router;
+let _isBrowserEnv = isBrowserEnv();
+let _onSSRAwaitResolveAll = (state) => {};
+let _ssrAwait = {};
+
+if (_isBrowserEnv) {
+	(
+		{
+			BrowserRouter,
+			useHistory,
+			useLocation,
+			useParams,
+			useRouteMatch,
+			Switch,
+			Route,
+		} = _reactRouterDOM
+	);
+
+	Router = BrowserRouter;
+
+} else {
+	(
+		{
+			StaticRouter,
+			useHistory,
+			useLocation,
+			useParams,
+			useRouteMatch,
+			Switch,
+			Route,
+		} = _reactRouterServer
+	);
+
+	Router = StaticRouter;
+}
 
 // ----------------------
 
@@ -72,7 +83,7 @@ function reducer(state, action) {
 export const Context = React.createContext(null);
 
 export function CTXRouter(props) {
-	const [state, dispatch] = useReducer(reducer, initialState);
+	const [state, dispatch] = useReducer(reducer, props.initialState || initialState);
 
 	async function useSetPage(arg) {
 		dispatch({ type: 'setPending', pending: true });
@@ -85,7 +96,7 @@ export function CTXRouter(props) {
 
 	async function useFetchPage(arg) {
 		let response = await axios({
-			url: '/api/v1/',
+			url: useGetHostURL() + '/api/v1/',
 			method: 'get',
 			headers: {
 				'Content-type': 'application/json',
@@ -107,6 +118,27 @@ export function CTXRouter(props) {
 		return res.data[0];
 	}
 
+	function useSSRAwait(name) {
+		_ssrAwait[name] = true;
+	}
+
+	function useSSRResolve(name) {
+		delete _ssrAwait[name];
+
+		if (!Object.keys(_ssrAwait).length)
+			_onSSRAwaitResolveAll(state);
+	}
+
+	function useGetHostURL() {
+		if (props.getHostURL)
+			return props.getHostURL();
+
+		return '';
+	}
+
+	if (props.onSSRAwaitResolveAll)
+		_onSSRAwaitResolveAll = props.onSSRAwaitResolveAll;
+
 	let value = {
 		state,
 		dispatch,
@@ -116,6 +148,8 @@ export function CTXRouter(props) {
 		useRouteMatch   : useRouteMatch,
 		useSetPage,
 		useFetchPage,
+		useSSRAwait,
+		useSSRResolve,
 	};
 
 	return (
@@ -135,16 +169,42 @@ export function CTXRouter(props) {
 
 
 function RouteBody(props) {
-	let { useParams, useSetPage } = useContext(Context);
+	let {
+		state,
+		useParams,
+		useSetPage,
+		useSSRAwait,
+		useSSRResolve,
+	} = useContext(Context);
+
+	let {
+		page,
+		pending,
+	} = state;
+
+	let isPageReady = !pending && !!page && !!page.uri;
+
 	let routerParams = useParams();
 
-	useEffect(() => {
-		useSetPage({
-			filter: {
-				uri: routerParams[0],
-			},
-		});
-	}, []);
+	let _useEffect = () => {
+		(async () => {
+			useSSRAwait('page-request');
+
+			if (!isPageReady) {
+				await useSetPage({
+					filter: {
+						uri: routerParams[0],
+					},
+				});
+			}
+
+			useSSRResolve('page-request');
+		})();
+	};
+
+	_isBrowserEnv
+		? useEffect(_useEffect, [])
+		: _useEffect();
 
 	return props.children;
 }

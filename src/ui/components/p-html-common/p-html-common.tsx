@@ -4,7 +4,10 @@ import styles from './p-html-common.m.css';
 import React from 'react';
 
 interface IProps {
-	headItems?: JSX.Element[]
+	children                ?: any,
+	headItems               ?: JSX.Element[],
+	onSSRAwaitResolveAll    ?: () => void,
+	getHostURL              ?: () => string,
 }
 
 function _renderScriptRedefReactRoot() {
@@ -18,8 +21,13 @@ function _renderScriptRedefReactRoot() {
 	);
 }
 
+const
+	noop = () => {};
+
 export function PHTMLCommon (props: IProps) {
-	let { headItems } = props;
+	let {
+		headItems,
+	} = props;
 
 	return (
 		<html className={styles.body}>
@@ -35,7 +43,11 @@ export function PHTMLCommon (props: IProps) {
 			}
 		</head>
 		<body>
-			<div id="app" data-reactroot />
+			<div id="app" data-reactroot >
+				{
+					props.children
+				}
+			</div>
 		</body>
 		</html>
 	);
