@@ -5,3 +5,7 @@ declare namespace NodeJS {
 }
 
 declare const __root: string;
+
+declare interface Window {
+	__REDUX_PRELOADED_STATE__: object;
+}

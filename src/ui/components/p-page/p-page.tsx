@@ -1,7 +1,7 @@
 'use strict';
 
 import React, { useContext, useEffect } from 'react';
-import { Context as PageRouterContext } from '../ctx-router/ctx-router';
+import { getContext as getPageContext } from '../ctx-router/ctx-router';
 import styles from './p-page.m.css';
 import _get from 'lodash/get';
 
@@ -11,7 +11,7 @@ const
 	};
 
 export function PPage(props) {
-	let { state } = useContext(PageRouterContext);
+	let { state } = useContext(getPageContext());
 	let { page, pending } = state;
 
 	let content = (pending || !page || !page.content)

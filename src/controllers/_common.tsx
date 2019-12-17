@@ -74,18 +74,18 @@ export default async function(req, res) {
 	}
 
 	try {
-		let initialState = null;
+		let initStore = null;
 
 		(function renderInit() {
 			let _done = 0;
 
-			function onSSRAwaitResolveAll(_state) {
+			function onSSRAwaitResolveAll({ store }) {
 				if (_done++)
 					return;
 
-				initialState = _state;
+				initStore = store;
 
-				res.send(renderFinally());
+				renderFinally();
 			}
 
 			ReactDOMServer.renderToString(
@@ -99,16 +99,12 @@ export default async function(req, res) {
 		})();
 
 		function renderFinally() {
-			return ''
-				+ '<!DOCTYPE html>'
-				+ ReactDOMServer.renderToString(
-					<PHTMLCommon headItems={headItems} >
-						<CTXRouter
-							initialState={initialState}
-							getHostURL={getHostURL}
-						/>
-					</PHTMLCommon>,
-				);
+			res.write('<!DOCTYPE html>');
+			ReactDOMServer.renderToNodeStream(
+				<PHTMLCommon headItems={headItems} store={initStore} >
+					<CTXRouter getHostURL={getHostURL} />
+				</PHTMLCommon>
+			).pipe(res);
 		}
 
 	} catch (err) {

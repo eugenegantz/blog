@@ -2,12 +2,14 @@
 
 import styles from './p-html-common.m.css';
 import React from 'react';
+import { Store } from 'redux';
 
 interface IProps {
 	children                ?: any,
 	headItems               ?: JSX.Element[],
 	onSSRAwaitResolveAll    ?: () => void,
 	getHostURL              ?: () => string,
+	store                   ?: { [key: string]: Store },
 }
 
 function _renderScriptRedefReactRoot() {
@@ -27,7 +29,21 @@ const
 export function PHTMLCommon (props: IProps) {
 	let {
 		headItems,
+		store,
 	} = props;
+
+	let reduxStateScript = void 0;
+
+	if (store) {
+		let reduxState = {};
+
+		Object.keys(store).forEach(key => {
+			reduxState[key] = store[key].getState();
+		});
+
+		reduxStateScript = `__REDUX_PRELOADED_STATE__ = ${JSON.stringify(reduxState)};`;
+	}
+
 
 	return (
 		<html className={styles.body}>
@@ -35,6 +51,7 @@ export function PHTMLCommon (props: IProps) {
 			{
 				_renderScriptRedefReactRoot()
 			}
+			<script type="application/javascript" dangerouslySetInnerHTML={{ __html: reduxStateScript }} />
 			<meta charSet="UTF-8" />
 			<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 			<meta httpEquiv="cache-control" content="public, max-age=2592000" />
