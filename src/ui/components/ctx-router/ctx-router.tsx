@@ -7,9 +7,11 @@ import produce from 'immer';
 import { PPage } from '../p-page/p-page';
 import * as _reactRouterDOM from 'react-router-dom';
 import * as _reactRouterServer from 'react-router';
-import { createStore } from 'redux';
 import {
 	Provider,
+	useSelector,
+	useDispatch,
+	useStore,
 	createStoreHook,
 	createDispatchHook,
 	createSelectorHook,
@@ -21,7 +23,7 @@ const
 let StaticRouter, BrowserRouter, useHistory, useLocation, useParams, useRouteMatch, Switch, Route, Router;
 
 let _isBrowserEnv               = isBrowserEnv();
-let _onSSRAwaitResolveAll       = ({ state, store }) => {};
+let _onSSRAwaitResolveAll       = () => {};
 let _ssrAwait                   = {};
 
 if (_isBrowserEnv) {
@@ -59,22 +61,18 @@ if (_isBrowserEnv) {
 // ----------------------
 
 
-let browserState = null;
-
-if (_isBrowserEnv)
-	browserState = window.__REDUX_PRELOADED_STATE__[COMPONENT_NAME];
-
-
 const
-	initialState = browserState || {
+	initialState = {
 		page: {},
 		pending: false,
 	};
 
 const
 	_reduce = {
-		init(state) {
-			return state;
+		init(state, { initialState }) {
+			return produce(state, state => {
+				return initialState || state;
+			});
 		},
 		setPending(state, { pending }) {
 			return produce(state, state => {
@@ -88,7 +86,7 @@ const
 		},
 	};
 
-function reducer(state, action) {
+export function reducer(state, action) {
 	state = state || initialState;
 
 	if (!_reduce[action.type])
@@ -102,45 +100,11 @@ function reducer(state, action) {
 // ----------------------
 
 
-let _context;
-
-export function getContext() {
-	return _isBrowserEnv
-		? _context = _context || React.createContext(null)
-		: React.createContext(null);
-}
+export const Context = React.createContext(null);
 
 
-// ----------------------
-
-
-const _globalStores = {
-	[COMPONENT_NAME]: createStore(reducer),
-};
-
-_globalStores[COMPONENT_NAME].dispatch({ type: 'init' });
-
-export const ReduxContext   = React.createContext({ store: _globalStores[COMPONENT_NAME], storeState: initialState });
-export const useStore       = createStoreHook(ReduxContext);
-export const useDispatch    = createDispatchHook(ReduxContext);
-export const useSelector    = createSelectorHook(ReduxContext);
-
-
-// ----------------------
-
-
-export function CTXRouter(props) {
-	return (
-		<Provider store={_globalStores[COMPONENT_NAME]} >
-			<CTXRouterContainer {...props} />
-		</Provider>
-	);
-}
-
-
-export function CTXRouterContainer(props) {
+export default function CTXRouter(props) {
 	let dispatch    = useDispatch();
-	let store       = useStore();
 	let state       = useSelector(s => s);
 
 	async function useSetPage(arg) {
@@ -173,7 +137,11 @@ export function CTXRouterContainer(props) {
 		if (!res.data[0])
 			throw new Error('!page');
 
-		return res.data[0];
+		let a = res.data[0];
+
+		a.content += new Date();
+
+		return a;
 	}
 
 	function useSSRAwait(name) {
@@ -183,16 +151,8 @@ export function CTXRouterContainer(props) {
 	function useSSRResolve(name) {
 		delete _ssrAwait[name];
 
-		let state = store.getState();
-
-		if (!Object.keys(_ssrAwait).length) {
-			_onSSRAwaitResolveAll({
-				state,
-				store: {
-					'ctx-router': store,
-				},
-			});
-		}
+		if (!Object.keys(_ssrAwait).length)
+			_onSSRAwaitResolveAll();
 	}
 
 	function useGetHostURL() {
@@ -218,8 +178,6 @@ export function CTXRouterContainer(props) {
 		useSSRResolve,
 	};
 
-	let Context = getContext();
-
 	return (
 		<Context.Provider value={value} >
 			<Router>
@@ -237,8 +195,6 @@ export function CTXRouterContainer(props) {
 
 
 function RouteBody(props) {
-	let Context = getContext();
-
 	let {
 		state,
 		useParams,

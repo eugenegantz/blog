@@ -9,7 +9,7 @@ interface IProps {
 	headItems               ?: JSX.Element[],
 	onSSRAwaitResolveAll    ?: () => void,
 	getHostURL              ?: () => string,
-	store                   ?: { [key: string]: Store },
+	store                   ?: Store,
 }
 
 function _renderScriptRedefReactRoot() {
@@ -35,13 +35,7 @@ export function PHTMLCommon (props: IProps) {
 	let reduxStateScript = void 0;
 
 	if (store) {
-		let reduxState = {};
-
-		Object.keys(store).forEach(key => {
-			reduxState[key] = store[key].getState();
-		});
-
-		reduxStateScript = `__REDUX_PRELOADED_STATE__ = ${JSON.stringify(reduxState)};`;
+		reduxStateScript = `__REDUX_PRELOADED_STATE__ = ${JSON.stringify(store.getState())};`;
 	}
 
 

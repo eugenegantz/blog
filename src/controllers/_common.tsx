@@ -6,8 +6,10 @@ import modURL from 'url';
 import modFs from 'fs';
 import modPath from 'path';
 import { PHTMLCommon } from '../ui/components/p-html-common/p-html-common';
-import { CTXRouter } from '../ui/components/ctx-router/ctx-router';
+import CTXRouter, { reducer } from '../ui/components/ctx-router/ctx-router';
 import _utilsReq from '../lib/utils/req';
+import { createStore } from 'redux';
+import { Provider } from 'react-redux';
 
 const
 	// @ts-ignore
@@ -49,7 +51,17 @@ const
 })();
 
 
+function getRandomIntInclusive(min, max) {
+	min = Math.ceil(min);
+	max = Math.floor(max);
+
+	return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+
 export default async function(req, res) {
+	req.id = Math.random().toString().replace('0.', '');
+
 	let headItems = Object.keys(bundles).map(key => {
 		if (/\.js$/ig.test(key)) {
 			return React.createElement('script', {
@@ -74,38 +86,42 @@ export default async function(req, res) {
 	}
 
 	try {
-		let initStore = null;
+		let runtimeName = `__serverRuntimeRequest__ctx${req.id}__`;
 
-		(function renderInit() {
-			let _done = 0;
+		let _runtime = {
+			[runtimeName]() {
+				let _done = 0;
+				let ctxRouterStore = createStore(reducer);
 
-			function onSSRAwaitResolveAll({ store }) {
-				if (_done++)
-					return;
+				ctxRouterStore.dispatch({ type: 'init' });
 
-				initStore = store;
+				ReactDOMServer.renderToString(
+					<PHTMLCommon headItems={headItems} >
+						<Provider store={ctxRouterStore}>
+							<CTXRouter
+								getHostURL={getHostURL}
+								onSSRAwaitResolveAll={() => !_done++ && renderFinally()}
+							/>
+						</Provider>
+					</PHTMLCommon>,
+				);
 
-				renderFinally();
+				function renderFinally() {
+					setTimeout(() => {
+						res.write('<!DOCTYPE html>');
+						ReactDOMServer.renderToNodeStream(
+							<PHTMLCommon store={ctxRouterStore} headItems={headItems} >
+								<Provider store={ctxRouterStore}>
+									<CTXRouter getHostURL={getHostURL} />
+								</Provider>
+							</PHTMLCommon>
+						).pipe(res);
+					}, getRandomIntInclusive(1000, 6000));
+				}
 			}
+		};
 
-			ReactDOMServer.renderToString(
-				<PHTMLCommon headItems={headItems} >
-					<CTXRouter
-						getHostURL={getHostURL}
-						onSSRAwaitResolveAll={onSSRAwaitResolveAll}
-					/>
-				</PHTMLCommon>,
-			);
-		})();
-
-		function renderFinally() {
-			res.write('<!DOCTYPE html>');
-			ReactDOMServer.renderToNodeStream(
-				<PHTMLCommon headItems={headItems} store={initStore} >
-					<CTXRouter getHostURL={getHostURL} />
-				</PHTMLCommon>
-			).pipe(res);
-		}
+		_runtime[runtimeName]();
 
 	} catch (err) {
 		console.error(err);
