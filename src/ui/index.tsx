@@ -4,7 +4,7 @@ import React from 'react';
 import reactDOM from 'react-dom';
 import CTXRouter, { reducer } from './components/ctx-router/ctx-router';
 // import { Provider } from 'react-redux';
-import { Provider } from './components/ctx-redux/ctx-redux';
+import { Provider } from 'react-redux';
 import { createStore, applyMiddleware } from 'redux';
 import thunk from 'redux-thunk';
 

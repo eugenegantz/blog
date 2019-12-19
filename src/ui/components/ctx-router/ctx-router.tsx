@@ -7,8 +7,6 @@ import produce from 'immer';
 import { PPage } from '../p-page/p-page';
 import * as _reactRouterDOM from 'react-router-dom';
 import * as _reactRouterServer from 'react-router';
-import _utilsReq from '../../../lib/utils/req';
-/*
 import {
 	Provider,
 	useSelector,
@@ -18,12 +16,6 @@ import {
 	createDispatchHook,
 	createSelectorHook,
 } from 'react-redux';
-*/
-
-import {
-	useSelector,
-	useDispatch,
-} from '../ctx-redux/ctx-redux';
 
 
 const
@@ -134,29 +126,10 @@ export function reducer(state, action) {
 
 // ----------------------
 
-const _contextTable = {};
-
-
 export const Context = React.createContext(null);
 
 
-export function getContext() {
-	let id = _utilsReq.getRuntimeContextId();
-
-	return _contextTable[id] || (_contextTable[id] = React.createContext(null));
-}
-
-
-export function clearRuntimeContext() {
-	let id = _utilsReq.getRuntimeContextId();
-
-	delete _contextTable[id];
-}
-
-
 export default function CTXRouter(props) {
-	const Context   = getContext();
-
 	let dispatch    = useDispatch();
 	let state       = useSelector(s => s);
 
@@ -190,11 +163,7 @@ export default function CTXRouter(props) {
 		if (!res.data[0])
 			throw new Error('!page');
 
-		let a = res.data[0];
-
-		a.content = (state as any).id;
-
-		return a;
+		return res.data[0];
 	}
 
 	function useSSRAwait(name) {
@@ -249,8 +218,6 @@ export default function CTXRouter(props) {
 
 
 function RouteBody(props) {
-	const Context = getContext();
-
 	let {
 		state,
 		useParams,

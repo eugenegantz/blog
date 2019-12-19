@@ -23,8 +23,6 @@ function _renderScriptRedefReactRoot() {
 	);
 }
 
-const
-	noop = () => {};
 
 export function PHTMLCommon (props: IProps) {
 	let {
