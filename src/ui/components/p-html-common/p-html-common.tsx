@@ -39,12 +39,10 @@ export function PHTMLCommon (props: IProps) {
 	}
 
 
-	// console.log((new Error()).stack);
-
-
 	return (
 		<html className={styles.body}>
 		<head>
+			<link rel="shortcut icon" href="about:blank" type="image/x-icon"/>
 			{
 				_renderScriptRedefReactRoot()
 			}

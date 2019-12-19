@@ -6,10 +6,12 @@ import modURL from 'url';
 import modFs from 'fs';
 import modPath from 'path';
 import { PHTMLCommon } from '../ui/components/p-html-common/p-html-common';
-import CTXRouter, { reducer } from '../ui/components/ctx-router/ctx-router';
+import CTXRouter, { reducer, clearRuntimeContext as clearRouterRuntimeContext } from '../ui/components/ctx-router/ctx-router';
 import _utilsReq from '../lib/utils/req';
-import { createStore } from 'redux';
-import { Provider } from 'react-redux';
+import { createStore, applyMiddleware } from 'redux';
+import thunk from 'redux-thunk';
+// import { Provider } from 'react-redux';
+import { Provider, clearRuntimeContext as clearReduxRuntimeContext } from '../ui/components/ctx-redux/ctx-redux';
 
 const
 	// @ts-ignore
@@ -51,14 +53,6 @@ const
 })();
 
 
-function getRandomIntInclusive(min, max) {
-	min = Math.ceil(min);
-	max = Math.floor(max);
-
-	return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-
 export default async function(req, res) {
 	req.id = Math.random().toString().replace('0.', '');
 
@@ -86,45 +80,58 @@ export default async function(req, res) {
 	}
 
 	try {
-		let runtimeName = `__serverRuntimeRequest__ctx${req.id}__`;
+		let runtimeName1 = `__serverRuntimeRequest__ctx${req.id}__1`;
+		let runtimeName2 = `__serverRuntimeRequest__ctx${req.id}__2`;
+		let ctxRouterStore = createStore(reducer, applyMiddleware(thunk));
 
 		let _runtime = {
-			[runtimeName]() {
-				console.log(`------ <REQUEST id="${req.id}"> ------`);
-				let _done = 0;
-				let ctxRouterStore = createStore(reducer);
-
+			[runtimeName1]() {
 				ctxRouterStore.dispatch({ type: 'init' });
 				ctxRouterStore.dispatch({ type: 'setId', id: req.id });
+				ctxRouterStore.dispatch({
+					type: 'setSSRAwaitCallback',
+					callback: () => _runtime[runtimeName2](),
+				});
 
 				ReactDOMServer.renderToString(
 					<PHTMLCommon headItems={headItems} >
-						<Provider store={ctxRouterStore}>
-							<CTXRouter
-								getHostURL={getHostURL}
-								onSSRAwaitResolveAll={() => !_done++ && renderFinally()}
-							/>
+						<Provider store={ctxRouterStore} >
+							<CTXRouter getHostURL={getHostURL} />
 						</Provider>
-					</PHTMLCommon>,
+					</PHTMLCommon>
 				);
-
-				function renderFinally() {
+			},
+			[runtimeName2]() {
+				/*
 					res.write('<!DOCTYPE html>');
 					ReactDOMServer.renderToNodeStream(
 						<PHTMLCommon store={ctxRouterStore} headItems={headItems} >
 							<Provider store={ctxRouterStore}>
 								<CTXRouter
 									getHostURL={getHostURL}
-									onSSRAwaitResolveAll={() => console.log(`------ </REQUEST id="${req.id}"> ------`)/null}
+									onSSRAwaitResolveAll={() => console.log(`------ </REQUEST id="${req.id}"> ------`)}
 								/>
 							</Provider>
 						</PHTMLCommon>
 					).pipe(res);
-				}
+					*/
+
+				let str = '<!DOCTYPE html>' + ReactDOMServer.renderToString(
+					<PHTMLCommon store={ctxRouterStore} headItems={headItems} >
+						<Provider store={ctxRouterStore}>
+							<CTXRouter getHostURL={getHostURL} />
+						</Provider>
+					</PHTMLCommon>
+				);
+
+				res.send(str);
+
+				clearReduxRuntimeContext();
+				clearRouterRuntimeContext();
 			}
 		};
 
-		_runtime[runtimeName]();
+		_runtime[runtimeName1]();
 
 	} catch (err) {
 		console.error(err);

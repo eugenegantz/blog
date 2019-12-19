@@ -90,4 +90,9 @@ export default {
 		return obj;
 	},
 
+
+	getRuntimeContextId(): string {
+		return ((new Error().stack.match(/__serverRuntimeRequest__ctx\d+__/ig) || '') + '').replace('__serverRuntimeRequest__ctx', '').replace('__', '') || 'default';
+	},
+
 };

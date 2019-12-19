@@ -7,6 +7,8 @@ import produce from 'immer';
 import { PPage } from '../p-page/p-page';
 import * as _reactRouterDOM from 'react-router-dom';
 import * as _reactRouterServer from 'react-router';
+import _utilsReq from '../../../lib/utils/req';
+/*
 import {
 	Provider,
 	useSelector,
@@ -16,6 +18,13 @@ import {
 	createDispatchHook,
 	createSelectorHook,
 } from 'react-redux';
+*/
+
+import {
+	useSelector,
+	useDispatch,
+} from '../ctx-redux/ctx-redux';
+
 
 const
 	COMPONENT_NAME = 'ctx-router';
@@ -66,6 +75,8 @@ const
 		page: {},
 		pending: false,
 		id: 0,
+		ssrAwait: {},
+		ssrAwaitCallback: () => {},
 	};
 
 const
@@ -90,6 +101,24 @@ const
 				state.page = page;
 			});
 		},
+		setSSRAwaitState(_state, { name, pending }) {
+			return produce(_state, state => {
+				pending
+					? state.ssrAwait[name] = true
+					: delete state.ssrAwait[name];
+			});
+		},
+		setSSRAwaitCallback(state, { callback }) {
+			let _callback = (() => {
+				let _done = 0;
+
+				return (...a) => !_done++ && callback(...a);
+			})();
+
+			return produce(state, state => {
+				state.ssrAwaitCallback = _callback;
+			});
+		}
 	};
 
 export function reducer(state, action) {
@@ -105,11 +134,29 @@ export function reducer(state, action) {
 
 // ----------------------
 
+const _contextTable = {};
+
 
 export const Context = React.createContext(null);
 
 
+export function getContext() {
+	let id = _utilsReq.getRuntimeContextId();
+
+	return _contextTable[id] || (_contextTable[id] = React.createContext(null));
+}
+
+
+export function clearRuntimeContext() {
+	let id = _utilsReq.getRuntimeContextId();
+
+	delete _contextTable[id];
+}
+
+
 export default function CTXRouter(props) {
+	const Context   = getContext();
+
 	let dispatch    = useDispatch();
 	let state       = useSelector(s => s);
 
@@ -145,20 +192,24 @@ export default function CTXRouter(props) {
 
 		let a = res.data[0];
 
-		a.content = state.id;
+		a.content = (state as any).id;
 
 		return a;
 	}
 
 	function useSSRAwait(name) {
-		_ssrAwait[name] = true;
+		dispatch({ type: 'setSSRAwaitState', name, pending: true });
 	}
 
 	function useSSRResolve(name) {
-		delete _ssrAwait[name];
+		dispatch((dispatch, getState) => {
+			dispatch({ type: 'setSSRAwaitState', name, pending: false });
 
-		if (!Object.keys(_ssrAwait).length)
-			_onSSRAwaitResolveAll();
+			let { ssrAwait, ssrAwaitCallback } = getState();
+
+			if (!Object.keys(ssrAwait).length && ssrAwaitCallback)
+				setTimeout(() => ssrAwaitCallback(), 10);
+		});
 	}
 
 	function useGetHostURL() {
@@ -167,9 +218,6 @@ export default function CTXRouter(props) {
 
 		return '';
 	}
-
-	if (props.onSSRAwaitResolveAll)
-		_onSSRAwaitResolveAll = props.onSSRAwaitResolveAll;
 
 	let value = {
 		state,
@@ -201,6 +249,8 @@ export default function CTXRouter(props) {
 
 
 function RouteBody(props) {
+	const Context = getContext();
+
 	let {
 		state,
 		useParams,

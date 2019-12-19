@@ -1,9 +1,10 @@
 'use strict';
 
 import React, { useContext, useEffect } from 'react';
-import { Context as RouterContext } from '../ctx-router/ctx-router';
+import { getContext as getRouterContext } from '../ctx-router/ctx-router';
 import styles from './p-page.m.css';
 import _get from 'lodash/get';
+import _utilsReq from '../../../lib/utils/req';
 
 const
 	_ = {
@@ -11,16 +12,14 @@ const
 	};
 
 export function PPage(props) {
-	let { state } = useContext(RouterContext);
+	let { state } = useContext(getRouterContext());
 	let { page, pending } = state;
 
 	let content = (pending || !page || !page.content)
-		? <div>pending</div>
+		? <div>100200pending</div>
 		: <div>{page.content}</div>;
 
-	let runtimeContextId = new Error().stack.match(/__serverRuntimeRequest__ctx\d+__/ig);
-
-	// console.log(runtimeContextId);
+	let runtimeContextId = _utilsReq.getRuntimeContextId();
 
 	return (
 		<div className={styles.body}>
