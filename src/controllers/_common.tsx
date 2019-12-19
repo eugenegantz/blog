@@ -90,10 +90,12 @@ export default async function(req, res) {
 
 		let _runtime = {
 			[runtimeName]() {
+				console.log(`------ <REQUEST id="${req.id}"> ------`);
 				let _done = 0;
 				let ctxRouterStore = createStore(reducer);
 
 				ctxRouterStore.dispatch({ type: 'init' });
+				ctxRouterStore.dispatch({ type: 'setId', id: req.id });
 
 				ReactDOMServer.renderToString(
 					<PHTMLCommon headItems={headItems} >
@@ -107,16 +109,17 @@ export default async function(req, res) {
 				);
 
 				function renderFinally() {
-					setTimeout(() => {
-						res.write('<!DOCTYPE html>');
-						ReactDOMServer.renderToNodeStream(
-							<PHTMLCommon store={ctxRouterStore} headItems={headItems} >
-								<Provider store={ctxRouterStore}>
-									<CTXRouter getHostURL={getHostURL} />
-								</Provider>
-							</PHTMLCommon>
-						).pipe(res);
-					}, getRandomIntInclusive(1000, 6000));
+					res.write('<!DOCTYPE html>');
+					ReactDOMServer.renderToNodeStream(
+						<PHTMLCommon store={ctxRouterStore} headItems={headItems} >
+							<Provider store={ctxRouterStore}>
+								<CTXRouter
+									getHostURL={getHostURL}
+									onSSRAwaitResolveAll={() => console.log(`------ </REQUEST id="${req.id}"> ------`)/null}
+								/>
+							</Provider>
+						</PHTMLCommon>
+					).pipe(res);
 				}
 			}
 		};

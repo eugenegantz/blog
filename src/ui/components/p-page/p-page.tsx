@@ -20,7 +20,7 @@ export function PPage(props) {
 
 	let runtimeContextId = new Error().stack.match(/__serverRuntimeRequest__ctx\d+__/ig);
 
-	console.log(runtimeContextId);
+	// console.log(runtimeContextId);
 
 	return (
 		<div className={styles.body}>

@@ -65,6 +65,7 @@ const
 	initialState = {
 		page: {},
 		pending: false,
+		id: 0,
 	};
 
 const
@@ -73,6 +74,11 @@ const
 			return produce(state, state => {
 				return initialState || state;
 			});
+		},
+		setId(state, { id }) {
+			return produce(state, state => {
+				state.id = id;
+			})
 		},
 		setPending(state, { pending }) {
 			return produce(state, state => {
@@ -139,7 +145,7 @@ export default function CTXRouter(props) {
 
 		let a = res.data[0];
 
-		a.content += new Date();
+		a.content = state.id;
 
 		return a;
 	}

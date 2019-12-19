@@ -39,6 +39,9 @@ export function PHTMLCommon (props: IProps) {
 	}
 
 
+	// console.log((new Error()).stack);
+
+
 	return (
 		<html className={styles.body}>
 		<head>
