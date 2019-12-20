@@ -1,31 +1,48 @@
 'use strict';
 
+import qs from 'qs';
+import { IAPIModulePostsGetArgs } from '../../../lib/api/v1/posts/lib/APIModulePosts';
+import { APIModulePosts } from '../../../lib/api/v1/posts/lib/interfaces/common';
+import { ITablePostsRow } from '../../../lib/api/v1/posts/lib/interfaces/tables/ITablePostsRow';
 import React, { useReducer, useContext, useEffect } from 'react';
 import { isBrowserEnv } from '../../../lib/utils/common';
-import axios from 'axios';
-import produce from 'immer';
+import axios, { AxiosResponse } from 'axios';
+import { reducer } from './reducer';
 import { PPage } from '../p-page/p-page';
 import * as _reactRouterDOM from 'react-router-dom';
 import * as _reactRouterServer from 'react-router';
 import {
-	Provider,
-	useSelector,
-	useDispatch,
+	useSelector as _useSelector,
+	useDispatch as _useDispatch,
 	useStore,
-	createStoreHook,
-	createDispatchHook,
-	createSelectorHook,
 } from 'react-redux';
 
-
 const
-	COMPONENT_NAME = 'ctx-router';
+	_isBrowserEnv = isBrowserEnv();
+
+// ----------------------
+
+
+interface IGetLocationResult {
+	pathname: string;
+	search: string;
+	hash: string;
+	state: any;
+}
+
+
+// ----------------------
+
+
+export { reducer };
+export const COMPONENT_NAME = 'ctx-router';
+export const Context = React.createContext(null);
+
+
+// ----------------------
+
 
 let StaticRouter, BrowserRouter, useHistory, useLocation, useParams, useRouteMatch, Switch, Route, Router;
-
-let _isBrowserEnv               = isBrowserEnv();
-let _onSSRAwaitResolveAll       = () => {};
-let _ssrAwait                   = {};
 
 if (_isBrowserEnv) {
 	(
@@ -62,88 +79,74 @@ if (_isBrowserEnv) {
 // ----------------------
 
 
-const
-	initialState = {
-		page: {},
-		pending: false,
-		id: 0,
-		ssrAwait: {},
-		ssrAwaitCallback: () => {},
-	};
+function useDispatch() {
+	let dispatch = _useDispatch();
 
-const
-	_reduce = {
-		init(state, { initialState }) {
-			return produce(state, state => {
-				return initialState || state;
-			});
-		},
-		setId(state, { id }) {
-			return produce(state, state => {
-				state.id = id;
+	return function(action) {
+		return dispatch(
+			Object.assign(action, {
+				namespace: COMPONENT_NAME,
 			})
-		},
-		setPending(state, { pending }) {
-			return produce(state, state => {
-				state.pending = pending;
-			});
-		},
-		setPage(state, { page }) {
-			return produce(state, state => {
-				state.page = page;
-			});
-		},
-		setSSRAwaitState(_state, { name, pending }) {
-			return produce(_state, state => {
-				pending
-					? state.ssrAwait[name] = true
-					: delete state.ssrAwait[name];
-			});
-		},
-		setSSRAwaitCallback(state, { callback }) {
-			let _callback = (() => {
-				let _done = 0;
+		);
+	}
+}
 
-				return (...a) => !_done++ && callback(...a);
-			})();
 
-			return produce(state, state => {
-				state.ssrAwaitCallback = _callback;
-			});
-		}
-	};
-
-export function reducer(state, action) {
-	state = state || initialState;
-
-	if (!_reduce[action.type])
-		return;
-		// throw new Error(`unknown action "${action.type}"`);
-
-	return _reduce[action.type](state, action);
+function useSelector(func) {
+	return _useSelector(state => func(state[COMPONENT_NAME]));
 }
 
 
 // ----------------------
 
-export const Context = React.createContext(null);
+
+const PAGE_404 = {
+	id: -1,
+	uid: null,
+	title: 'Страница не найдено',
+	uri: '404',
+	type: 'post',
+	content: 'Страница не найдена',
+	date: new Date() + '',
+	date_ts: Date.now(),
+	meta: [
+		{
+			value: 'p-404',
+			key: '_page_template',
+		}
+	],
+};
 
 
 export default function CTXRouter(props) {
 	let dispatch    = useDispatch();
+	let store       = useStore();
 	let state       = useSelector(s => s);
 
-	async function useSetPage(arg) {
-		dispatch({ type: 'setPending', pending: true });
-
-		let page = await useFetchPage(arg);
-
-		dispatch({ type: 'setPage', page });
-		dispatch({ type: 'setPending', pending: false });
+	if (!store.reducer.has(COMPONENT_NAME, reducer)) {
+		store.reducer.add(COMPONENT_NAME, reducer);
+		dispatch({ type: 'INIT' });
 	}
 
-	async function useFetchPage(arg) {
-		let response = await axios({
+	function useSetPage({ page }): void {
+		dispatch({ type: 'SET_PAGE', page });
+	}
+
+	async function useGoToPage(arg: IAPIModulePostsGetArgs): Promise<void> {
+		dispatch({ type: 'SET_PENDING', pending: true });
+
+		let page = await useFetchPage(arg) || PAGE_404;
+
+		useSetPage({ page });
+
+		dispatch({ type: 'SET_PENDING', pending: false });
+	}
+
+	async function useFetchPage(arg: IAPIModulePostsGetArgs): Promise<ITablePostsRow> {
+		let response = await axios.request<
+			APIModulePosts.Get.StructResponseResult,
+			AxiosResponse<APIModulePosts.Get.StructResponseResult>
+		>({
 			url: useGetHostURL() + '/api/v1/',
 			method: 'get',
 			headers: {
@@ -153,6 +156,9 @@ export default function CTXRouter(props) {
 				method: 'posts.get',
 				argument: arg,
 			},
+			paramsSerializer(params) {
+				return qs.stringify(params, { arrayFormat: 'brackets' })
+			},
 		});
 
 		let res = response.data;
@@ -160,42 +166,46 @@ export default function CTXRouter(props) {
 		if (res.err)
 			throw new Error(res.err);
 
-		if (!res.data[0])
-			throw new Error('!page');
-
 		return res.data[0];
 	}
 
-	function useSSRAwait(name) {
-		dispatch({ type: 'setSSRAwaitState', name, pending: true });
+	function useSSRAwait(name: string): void {
+		dispatch({ type: 'SET_SSR_AWAIT', name, pending: true });
 	}
 
-	function useSSRResolve(name) {
+	function useSSRResolve(name: string): void {
 		dispatch((dispatch, getState) => {
-			dispatch({ type: 'setSSRAwaitState', name, pending: false });
+			dispatch({ namespace: COMPONENT_NAME, type: 'SET_SSR_AWAIT', name, pending: false });
 
-			let { ssrAwait, ssrAwaitCallback } = getState();
+			let { ssrAwait, onSSRReady } = getState()[COMPONENT_NAME];
 
-			if (!Object.keys(ssrAwait).length && ssrAwaitCallback)
-				setTimeout(() => ssrAwaitCallback(), 10);
+			if (!Object.keys(ssrAwait).length && onSSRReady)
+				setTimeout(() => onSSRReady(), 10);
 		});
 	}
 
-	function useGetHostURL() {
+	function useGetHostURL(): string {
 		if (props.getHostURL)
 			return props.getHostURL();
 
 		return '';
 	}
 
+	function _useLocation(): IGetLocationResult {
+		return _isBrowserEnv
+			? useLocation()
+			: state.getLocation();
+	}
+
 	let value = {
 		state,
 		dispatch,
 		useHistory      : useHistory,
-		useLocation     : useLocation,
+		useLocation     : _useLocation,
 		useParams       : useParams,
 		useRouteMatch   : useRouteMatch,
 		useSetPage,
+		useGoToPage,
 		useFetchPage,
 		useSSRAwait,
 		useSSRResolve,
@@ -221,7 +231,8 @@ function RouteBody(props) {
 	let {
 		state,
 		useParams,
-		useSetPage,
+		useLocation,
+		useGoToPage,
 		useSSRAwait,
 		useSSRResolve,
 	} = useContext(Context);
@@ -233,16 +244,17 @@ function RouteBody(props) {
 
 	let isPageReady = !pending && !!page && !!page.uri;
 
-	let routerParams = useParams();
+	// let routerParams = useParams();
+	let routerLocation = useLocation();
 
 	let _useEffect = () => {
 		(async () => {
 			useSSRAwait('page-request');
 
 			if (!isPageReady) {
-				await useSetPage({
+				await useGoToPage({
 					filter: {
-						uri: routerParams[0],
+						uri: routerLocation.pathname,
 					},
 				});
 			}

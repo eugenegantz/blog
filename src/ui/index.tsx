@@ -2,17 +2,20 @@
 
 import React from 'react';
 import reactDOM from 'react-dom';
-import CTXRouter, { reducer } from './components/ctx-router/ctx-router';
-// import { Provider } from 'react-redux';
+import CTXRouter from './components/ctx-router/ctx-router';
 import { Provider } from 'react-redux';
 import { createStore, applyMiddleware } from 'redux';
 import thunk from 'redux-thunk';
+import { createReducer } from './reducers/reducers';
 
 document.addEventListener('DOMContentLoaded', () => {
-	let store = createStore(reducer, applyMiddleware(thunk));
-	let initialState = window.__REDUX_PRELOADED_STATE__;
+	let rootReducer     = createReducer();
+	let store           = createStore(rootReducer, applyMiddleware(thunk));
+	let initialState    = window.__REDUX_PRELOADED_STATE__;
 
-	store.dispatch({ type: 'init', initialState });
+	store.reducer = rootReducer;
+
+	store.dispatch({ type: 'INIT', state: initialState });
 
 	let app = (
 		<Provider store={store} >

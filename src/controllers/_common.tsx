@@ -6,12 +6,12 @@ import modURL from 'url';
 import modFs from 'fs';
 import modPath from 'path';
 import { PHTMLCommon } from '../ui/components/p-html-common/p-html-common';
-import CTXRouter, { reducer } from '../ui/components/ctx-router/ctx-router';
+import CTXRouter, { reducer as routerReducer, COMPONENT_NAME as R_COMPONENT_NAME } from '../ui/components/ctx-router/ctx-router';
 import _utilsReq from '../lib/utils/req';
 import { createStore, applyMiddleware } from 'redux';
 import thunk from 'redux-thunk';
-// import { Provider } from 'react-redux';
 import { Provider } from 'react-redux';
+import { createReducer } from '../ui/reducers/reducers';
 
 const
 	// @ts-ignore
@@ -22,6 +22,7 @@ const
 	__dirname = modPath.dirname(__filename),
 	bundlesDir = modPath.resolve(__dirname, '../../static/bundles/'),
 	bundles = {};
+
 
 (async () => {
 	let list: string[] = await (
@@ -80,10 +81,32 @@ export default async function(req, res) {
 	}
 
 	try {
-		let ctxRouterStore = createStore(reducer, applyMiddleware(thunk));
+		let rootReducer = createReducer();
+		let ctxRouterStore = createStore(rootReducer, applyMiddleware(thunk));
 
-		ctxRouterStore.dispatch({ type: 'init' });
-		ctxRouterStore.dispatch({ type: 'setSSRAwaitCallback', callback: _send });
+		ctxRouterStore.reducer = rootReducer;
+
+		// Иначе ON_SSR_READY некуда будет записывать свое состояние
+		ctxRouterStore.reducer.add(R_COMPONENT_NAME, routerReducer);
+		ctxRouterStore.dispatch({ namespace: R_COMPONENT_NAME, type: 'INIT' });
+		ctxRouterStore.dispatch({ namespace: R_COMPONENT_NAME, type: 'ON_SSR_READY', callback: _send });
+
+		ctxRouterStore.dispatch({
+			namespace: R_COMPONENT_NAME,
+			type: 'MERGE',
+			state: {
+				getLocation() {
+					let url = _utilsReq.getURLObject(req);
+
+					return {
+						pathname: url.pathname,
+						search: url.query,
+						hash: '',
+						state: void 0,
+					};
+				},
+			},
+		});
 
 		ReactDOMServer.renderToString(
 			<PHTMLCommon headItems={headItems} >

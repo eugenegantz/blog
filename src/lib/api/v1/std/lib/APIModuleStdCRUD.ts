@@ -19,7 +19,7 @@ import {
 
 
 function isEmpty(value: any): boolean {
-	return !![].concat(value).join('');
+	return ![].concat(value).join('');
 }
 
 

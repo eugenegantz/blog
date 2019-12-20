@@ -17,9 +17,9 @@ export namespace APIModulePosts {
 
 		}
 
-		export type StructResponseError = Error;
+		export type StructResponseError = { err?: (string | null) };
 
-		export type StructResponseResult = StructResponseSuccess | StructResponseError;
+		export type StructResponseResult = StructResponseSuccess & StructResponseError;
 
 	}
 
@@ -34,9 +34,9 @@ export namespace APIModulePosts {
 
 		}
 
-		export type StructResponseError = Error;
+		export type StructResponseError = { err?: (string | null) };
 
-		export type StructResponseResult = StructResponseSuccess | StructResponseError;
+		export type StructResponseResult = StructResponseSuccess & StructResponseError;
 
 	}
 
