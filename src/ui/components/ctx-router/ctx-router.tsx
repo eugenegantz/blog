@@ -251,7 +251,7 @@ function RouteBody(props) {
 		(async () => {
 			useSSRAwait('page-request');
 
-			if (!isPageReady) {
+			if (!isPageReady || routerLocation.pathname != page.uri) {
 				await useGoToPage({
 					filter: {
 						uri: routerLocation.pathname,
@@ -264,7 +264,7 @@ function RouteBody(props) {
 	};
 
 	_isBrowserEnv
-		? useEffect(_useEffect, [])
+		? useEffect(_useEffect, [routerLocation.pathname])
 		: _useEffect();
 
 	return props.children;

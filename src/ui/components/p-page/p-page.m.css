@@ -1,4 +1,11 @@
+:global(body) {
+	margin: 0;
+	padding: 0;
+
+	font-family: Cambria, sans-serif;
+}
+
 .body {
-    position: relative;
-    margin: 1rem auto;
+	position: relative;
+	margin: 1rem auto;
 }

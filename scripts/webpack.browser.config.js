@@ -1,8 +1,13 @@
 const
-	nodeExternals = require('webpack-node-externals'),
-	webpack = require('webpack'),
-	OnBuildPlugin = require('./webpack-plugin-on-build'),
-	MiniCssExtractPlugin = require('mini-css-extract-plugin'),
+	nodeExternals               = require('webpack-node-externals'),
+	webpack                     = require('webpack'),
+	minimist                    = require('minimist'),
+	argv                        = minimist(process.argv.slice(2)),
+	OnBuildPlugin               = require('./plugins/webpack-plugin-on-build'),
+	MiniCssExtractPlugin        = require('mini-css-extract-plugin'),
+	UglifyJsPlugin              = require('uglifyjs-webpack-plugin');
+
+const
 	MODULES = {
 		fs: require('fs'),
 		path: require('path'),
@@ -11,10 +16,12 @@ const
 const
 	DIR_BUILD = MODULES.path.resolve(__dirname, '../static/bundles/');
 
+const
+	IS_DEV = process.env.NODE_ENV === 'development';
 
 module.exports = {
 	// mode: "production",
-	mode: 'development',
+	mode: IS_DEV ? 'development' : 'production',
 
 	target: 'web',
 
@@ -34,6 +41,12 @@ module.exports = {
 		extensions: [".ts", ".tsx", ".js", ".jsx"]
 	},
 
+	optimization: {
+		minimizer: [
+			// IS_DEV ? null : new UglifyJsPlugin(),
+		],
+	},
+
 	module: {
 		rules: [
 			{
@@ -41,7 +54,7 @@ module.exports = {
 				// exclude: /node_modules/,
 				use: [
 					{
-						loader: MODULES.path.resolve(__dirname, '../loaders/import-meta.js'),
+						loader: MODULES.path.resolve(__dirname, './loaders/import-meta.js'),
 					},
 					{
 						loader: "ts-loader",
@@ -66,7 +79,7 @@ module.exports = {
 					{
 						loader: MiniCssExtractPlugin.loader,
 						options: {
-							hmr: process.env.NODE_ENV === 'development',
+							hmr: IS_DEV,
 						},
 					},
 					{

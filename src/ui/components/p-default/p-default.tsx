@@ -1,6 +1,7 @@
 'use strict';
 
 import React from 'react';
+import BLayoutMain from '../b-layout-main/b-layout-main';
 
 export default function PDefault(props) {
 	let { page, pending } = props;
@@ -8,5 +9,9 @@ export default function PDefault(props) {
 	if (pending)
 		return <div>pending</div>;
 
-	return <div dangerouslySetInnerHTML={{ __html: page.content }} />
+	return (
+		<BLayoutMain>
+			<div dangerouslySetInnerHTML={{ __html: page.content }} />
+		</BLayoutMain>
+	);
 }

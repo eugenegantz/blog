@@ -2,7 +2,7 @@
 
 import React, { useContext, useEffect } from 'react';
 import { Context as RouterContext } from '../ctx-router/ctx-router';
-import styles from './p-page.m.css';
+import './p-page.m.css';
 import _get from 'lodash/get';
 import pageDeps from '../deps';
 import PDefault from '../p-default/p-default';

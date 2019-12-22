@@ -1,0 +1,18 @@
+.root {
+	position: relative;
+}
+
+.title {
+	margin-bottom: 1rem;
+	font-size: 2rem;
+}
+
+.nav {
+	position: relative;
+	border-bottom: 2px solid black;
+	margin-bottom: 1rem;
+}
+
+.nav-item {
+	padding: 1rem 0;
+}

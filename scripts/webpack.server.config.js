@@ -1,10 +1,18 @@
 const
-	nodeExternals = require('webpack-node-externals'),
-	webpack = require('webpack'),
-	MiniCssExtractPlugin = require('mini-css-extract-plugin'),
+	nodeExternals               = require('webpack-node-externals'),
+	webpack                     = require('webpack'),
+	MiniCssExtractPlugin        = require('mini-css-extract-plugin'),
+	UglifyJsPlugin              = require('uglifyjs-webpack-plugin'),
+	minimist                    = require('minimist'),
+	argv                        = minimist(process.argv.slice(2));
+
+const
 	MODULES = {
 		path: require('path'),
 	};
+
+const
+	IS_DEV = process.env.NODE_ENV === 'development';
 
 module.exports = {
 	// mode: "production",
@@ -30,13 +38,19 @@ module.exports = {
 		extensions: [".ts", ".tsx", ".js", ".jsx"]
 	},
 
+	optimization: {
+		minimizer: [
+			IS_DEV ? null : new UglifyJsPlugin(),
+		],
+	},
+
 	module: {
 		rules: [
 			{
 				test: /\.ts(x?)$/,
 				// exclude: /node_modules/,
 				use: [
-					MODULES.path.resolve(__dirname, '../loaders/import-meta.js'),
+					MODULES.path.resolve(__dirname, './loaders/import-meta.js'),
 					"ts-loader",
 				]
 			},
